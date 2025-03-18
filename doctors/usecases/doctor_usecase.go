@@ -22,7 +22,3 @@ func NewDoctorUsecase(repo repositories.DoctorRepository) DoctorUsecase {
 func (u *doctorUsecase) SearchDoctors(speciality string, latitude, longitude float64) ([]entities.Doctor, error) {
 	return u.doctorRepo.SearchDoctors(speciality, latitude, longitude)
 }
-
-func (u *doctorUsecase) GetDoctorById(id int) (entities.Doctor, error) {
-	return u.doctorRepo.GetDoctorById(id)
-}

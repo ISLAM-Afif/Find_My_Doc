@@ -5,14 +5,20 @@ import (
 	"findMyDoc/users/usecases"
 	"findMyDoc/users/requests"
 	"net/http"
+	"findMyDoc/internal/utils"
 )
+
+import doctorsRepositories "findMyDoc/doctors/repositories"
+import patientsRepositories "findMyDoc/patients/repositories"
 
 type UserController struct {
 	usecase usecases.UserUsecase
+	doctorsRepositories doctorsRepositories.DoctorRepository
+	patientsRepositories patientsRepositories.PatientRepository
 }
 
-func NewUserController(uc usecases.UserUsecase) *UserController {
-	return &UserController{usecase: uc}
+func NewUserController(uc usecases.UserUsecase ,dc doctorsRepositories.DoctorRepository, pc patientsRepositories.PatientRepository) *UserController {
+	return &UserController{usecase: uc , doctorsRepositories: dc , patientsRepositories: pc}
 }
 
 func (c *UserController) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,4 +60,31 @@ func (c *UserController) RegisterHandler(w http.ResponseWriter, r *http.Request)
 		"message": "User registered successfully",
 		"token": token,
 	})
+}
+
+func (c *UserController) GetProfile(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	userID := utils.ExtractUserIDFromToken(authHeader)
+	role := utils.ExtractRoleFromToken(authHeader)
+
+	if role == "doctor" {
+		doctors, err := c.doctorsRepositories.GetDoctorById(userID)
+		if err != nil {
+			http.Error(w, "Error retrieving doctors", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(doctors)
+	} else {
+		patients, err := c.patientsRepositories.GetPatientById(userID)
+		if err != nil {
+			http.Error(w, "Error retrieving doctors", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(patients)
+	}
+	
 }

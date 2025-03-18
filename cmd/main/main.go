@@ -4,31 +4,28 @@ import (
 	"log"
 	"net/http"
 
+
 	"findMyDoc/pkg/db"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
 	"findMyDoc/middlewares"
-
-	doctorsControllers "findMyDoc/doctors/controllers"
-
-	doctorsUsecases "findMyDoc/doctors/usecases"
-
-	doctorsRepositories "findMyDoc/doctors/repositories"
-
-	appointmentsControllers "findMyDoc/appoinments/controllers"
-
-	appointmentsUsecases "findMyDoc/appoinments/usecases"
-
-	appointmentsRepositories "findMyDoc/appoinments/repositories"
-
-	usersControllers "findMyDoc/users/controllers"
-
-	usersUsecases "findMyDoc/users/usecases"
-
-	usersRepositories "findMyDoc/users/repositories"
 )
+
+import doctorsControllers "findMyDoc/doctors/controllers"
+import doctorsUsecases "findMyDoc/doctors/usecases"
+import doctorsRepositories "findMyDoc/doctors/repositories"
+
+import patientsRepositories "findMyDoc/patients/repositories"
+
+import appointmentsControllers "findMyDoc/appoinments/controllers"
+import appointmentsUsecases "findMyDoc/appoinments/usecases"
+import appointmentsRepositories "findMyDoc/appoinments/repositories"
+
+import usersControllers "findMyDoc/users/controllers"
+import usersUsecases "findMyDoc/users/usecases"
+import usersRepositories "findMyDoc/users/repositories"
 
 func main() {
 	// Setup database connection
@@ -43,6 +40,8 @@ func main() {
 	doctorUsecase := doctorsUsecases.NewDoctorUsecase(doctorRepo)
 	doctorController := doctorsControllers.NewDoctorController(doctorUsecase)
 
+	patientRepo := patientsRepositories.NewPatientRepository(database)
+
 	// Setup appointment-related components
 	appointmentRepo := appointmentsRepositories.NewAppointmentRepository(database)
 	appointmentUsecase := appointmentsUsecases.NewAppointmentUsecase(appointmentRepo)
@@ -51,7 +50,8 @@ func main() {
 	// User authentication setup
 	userRepo := usersRepositories.NewUserRepository(database)
 	userUsecase := usersUsecases.NewUserUsecase(userRepo)
-	userController := usersControllers.NewUserController(userUsecase)
+	userController := usersControllers.NewUserController(userUsecase , doctorRepo, patientRepo)
+
 
 	// Setup router
 	r := chi.NewRouter()
@@ -61,11 +61,12 @@ func main() {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middlewares.JWTMiddleware)
-		r.Get("/doctors", doctorController.SearchDoctors)                                             // search doctor
-		r.Post("/appointments", appointmentController.BookAppointmentHandler)                         // book an appoinment
-		r.Get("/doctors/appointments/pending", appointmentController.GetPendingAppointmentsHandler)   // pending appoinment list
-		r.Patch("/appointments/{id}/accept", appointmentController.AcceptAppointmentHandler)          // accept appoinment
+		r.Get("/doctors", doctorController.SearchDoctors) // search doctor
+		r.Post("/appointments", appointmentController.BookAppointmentHandler) // book an appoinment
+		r.Get("/doctors/appointments/pending", appointmentController.GetPendingAppointmentsHandler) // pending appoinment list
+		r.Patch("/appointments/{id}/accept", appointmentController.AcceptAppointmentHandler) // accept appoinment
 		r.Get("/doctors/appointments/accepted", appointmentController.GetAcceptedAppointmentsHandler) // accepted appoinment list
+		r.Get("/profile", userController.GetProfile) // get profile
 	})
 
 	// Start server

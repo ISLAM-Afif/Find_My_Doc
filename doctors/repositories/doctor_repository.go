@@ -3,6 +3,7 @@ package repositories
 import (
 	"findMyDoc/internal/entities"
 	"findMyDoc/internal/utils"
+
 	"gorm.io/gorm"
 )
 
@@ -23,15 +24,22 @@ func NewDoctorRepository(db *gorm.DB) DoctorRepository {
 
 func (r *doctorRepository) SearchDoctors(speciality string, latitude, longitude float64) ([]entities.Doctor, error) {
 	var doctors []entities.Doctor
-	if err := r.db.Where("speciality = ?", speciality).Find(&doctors).Error; err != nil {
-		return nil, err
+
+	if speciality == "" {
+		if err := r.db.Find(&doctors).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := r.db.Where("speciality = ?", speciality).Find(&doctors).Error; err != nil {
+			return nil, err
+		}
 	}
 
-	// Filter doctors by location (within 1km)
+	// Filter doctors by location (within 10km)
 	var filteredDoctors []entities.Doctor
 	for _, doc := range doctors {
 		distance := utils.CalculateDistance(latitude, longitude, doc.Latitude, doc.Longitude)
-		if distance <= 1.0 {
+		if distance <= 10.0 {
 			filteredDoctors = append(filteredDoctors, doc)
 		}
 	}
@@ -41,7 +49,7 @@ func (r *doctorRepository) SearchDoctors(speciality string, latitude, longitude 
 
 func (r *doctorRepository) GetDoctorById(id int) (entities.Doctor, error) {
 	var doctor entities.Doctor
-	if err := r.db.Where("user_id = ?", id).Find(&doctor).Error; err != nil {
+	if err := r.db.Where("id = ?", id).Find(&doctor).Error; err != nil {
 		return doctor, err
 	}
 	return doctor, nil

@@ -4,8 +4,8 @@ tmp_dir = "tmp"
 
 [build]
   # The compiled binary will be placed inside the 'tmp' directory
-  bin = "./tmp/main.exe"
-  cmd = "go build -o ./tmp/main.exe ./cmd/main"  # Updated to point to the main package
+  bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main ./cmd/main"  # Updated to point to the main package
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
